@@ -1,0 +1,16 @@
+[
+{
+  "modid": "claimitgui",
+  "name": "ClaimIt GUI",
+  "description": "GUI and client hooks for ClaimIt.",
+  "version": "${version}",
+  "mcversion": "${mcversion}",
+  "url": "",
+  "updateUrl": "",
+  "authorList": ["its_meow"],
+  "credits": "its_meow for Programming, Concept, and Design",
+  "logoFile": "",
+  "screenshots": [],
+  "dependencies": []
+}
+]

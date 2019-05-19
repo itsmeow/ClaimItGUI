@@ -1,0 +1,59 @@
+buildscript {
+    repositories {
+        jcenter()
+        maven { url = "http://files.minecraftforge.net/maven" }
+    }
+    dependencies {
+        classpath 'net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT'
+    }
+}
+apply plugin: 'net.minecraftforge.gradle.forge'
+
+
+version = "${project.mc_version}-${project.mod_version}"
+group = project.maven_group
+archivesBaseName = project.mod_id
+
+sourceCompatibility = targetCompatibility = '1.8'
+compileJava {
+    sourceCompatibility = targetCompatibility = '1.8'
+}
+
+minecraft {
+    version = "${project.mc_version}-${project.forge_version}"
+    runDir = "run"
+    mappings = project.mcp_mappings
+    replace "@VERSION@", "${project.mc_version}-${project.mod_version}"
+    makeObfSourceJar = false
+}
+
+dependencies {
+
+}
+
+jar {
+    from "LICENSE"
+    manifest.mainAttributes(
+            "Implementation-Title": project.name,
+            "Implementation-Version": "${project.version}",
+            "Built-On": "${project.mc_version}-${project.forge_version}",
+            "Maven-Artifact": "${project.group}:${project.archivesBaseName}:${project.version}",
+    )
+    classifier ''
+}
+
+
+processResources {
+    inputs.property "version", project.version
+    inputs.property "mcversion", project.minecraft.version
+
+    from(sourceSets.main.resources.srcDirs) {
+        include 'mcmod.info'
+                
+        expand 'version':project.mod_version, 'mcversion':project.minecraft.version
+    }
+        
+    from(sourceSets.main.resources.srcDirs) {
+        exclude 'mcmod.info'
+    }
+}
