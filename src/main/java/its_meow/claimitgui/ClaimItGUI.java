@@ -8,7 +8,7 @@ import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
 import net.minecraftforge.fml.common.event.FMLServerStoppingEvent;
 
-@Mod.EventBusSubscriber(modid = ClaimIt.MOD_ID)
+@Mod.EventBusSubscriber(modid = ClaimItGUI.MOD_ID)
 @Mod(modid = ClaimItGUI.MOD_ID, name = ClaimItGUI.NAME, version = ClaimItGUI.VERSION, acceptedMinecraftVersions = ClaimItGUI.acceptedMCV, dependencies = "after-required:claimitapi|claimit")
 public class ClaimItGUI {
     

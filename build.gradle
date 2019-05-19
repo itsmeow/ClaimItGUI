@@ -28,7 +28,8 @@ minecraft {
 }
 
 dependencies {
-
+    deobfCompile 'its_meow.claimit:claimit:1.12.2-1.0.0'
+	deobfCompile 'its_meow.claimitapi:claimit:1.12.2-1.0.0:api'
 }
 
 jar {
