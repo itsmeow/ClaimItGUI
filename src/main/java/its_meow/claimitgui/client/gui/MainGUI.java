@@ -10,7 +10,7 @@ public class MainGUI extends GuiScreen {
 
     public static final int CLAIM_LIST_ID = 512325;
     public GuiButton claimListButton = null;
-    public OwnedClaimListGUI claimList = null;
+    public ClaimListGUI claimList = null;
 
     public MainGUI() {
         this.mc = Minecraft.getMinecraft();
@@ -20,7 +20,7 @@ public class MainGUI extends GuiScreen {
     public void initGui() {
         claimListButton = new GuiButton(CLAIM_LIST_ID, 0, 0, 50, 20, "Claim List");
         this.addButton(claimListButton);
-        claimList = new OwnedClaimListGUI();
+        claimList = new ClaimListGUI();
     }
 
     @Override
