@@ -10,13 +10,13 @@ import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 import net.minecraftforge.fml.relauncher.Side;
 
-public class ClaimRemovePacket implements IMessage {
+public class SClaimRemovePacket implements IMessage {
     
     public String trueName;
     
-    public ClaimRemovePacket() {}
+    public SClaimRemovePacket() {}
     
-    public ClaimRemovePacket(ClaimArea claim) {
+    public SClaimRemovePacket(ClaimArea claim) {
         trueName = claim.getTrueViewName();
     }
     
@@ -32,10 +32,10 @@ public class ClaimRemovePacket implements IMessage {
         buf.writeCharSequence(trueName, Charsets.UTF_8);
     }
     
-    public static class Handler implements IMessageHandler<ClaimRemovePacket, IMessage> {
+    public static class Handler implements IMessageHandler<SClaimRemovePacket, IMessage> {
 
         @Override
-        public IMessage onMessage(ClaimRemovePacket message, MessageContext ctx) {
+        public IMessage onMessage(SClaimRemovePacket message, MessageContext ctx) {
             if(ctx.side != Side.CLIENT) {
                 return null;
             }
