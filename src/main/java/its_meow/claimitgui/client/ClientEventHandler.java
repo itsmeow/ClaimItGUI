@@ -11,6 +11,7 @@ import net.minecraftforge.client.event.GuiScreenEvent.ActionPerformedEvent;
 import net.minecraftforge.client.event.GuiScreenEvent.InitGuiEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.minecraftforge.fml.common.gameevent.PlayerEvent.PlayerLoggedOutEvent;
 import net.minecraftforge.fml.relauncher.Side;
 
 @Mod.EventBusSubscriber(modid = ClaimItGUI.MOD_ID, value = Side.CLIENT)
@@ -31,6 +32,11 @@ public class ClientEventHandler {
         if((event.getGui() instanceof GuiInventory || event.getGui() instanceof GuiContainerCreative) && event.getButton().id == 5604342) {
             Minecraft.getMinecraft().displayGuiScreen(new MainGUI());
         }
+    }
+    
+    @SubscribeEvent
+    public static void onExitWorld(PlayerLoggedOutEvent event) {
+        ClientClaimManager.clearClaims();
     }
 
 }

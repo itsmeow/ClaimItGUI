@@ -27,9 +27,16 @@ minecraft {
     makeObfSourceJar = false
 }
 
+repositories {
+    maven {
+        name = "ClaimIt"
+        url = "https://dl.bintray.com/itsmeow/maven"
+   }
+}
+
 dependencies {
-    deobfCompile 'its_meow.claimit:claimit:1.12.2-1.0.0'
-	deobfCompile 'its_meow.claimitapi:claimit:1.12.2-1.0.0:api'
+    deobfCompile 'its_meow.claimit:claimit:1.12.2-pre-release'
+	deobfCompile 'its_meow.claimit:claimitapi:1.12.2-pre-release'
 }
 
 jar {

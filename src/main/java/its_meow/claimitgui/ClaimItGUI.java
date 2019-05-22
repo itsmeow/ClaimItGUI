@@ -2,12 +2,15 @@ package its_meow.claimitgui;
 
 import java.util.UUID;
 
-import com.google.common.collect.ImmutableList;
-
+import its_meow.claimit.AdminManager;
 import its_meow.claimit.api.ClaimItAPI;
 import its_meow.claimit.api.claim.ClaimArea;
 import its_meow.claimit.api.claim.ClaimManager;
 import its_meow.claimit.api.event.claim.ClaimAddedEvent;
+import its_meow.claimit.api.event.claim.ClaimRemovedEvent;
+import its_meow.claimit.api.group.Group;
+import its_meow.claimit.api.group.GroupManager;
+import its_meow.claimitgui.network.CRefreshListPacket;
 import its_meow.claimitgui.network.SClaimAddPacket;
 import its_meow.claimitgui.network.SClaimRemovePacket;
 import net.minecraft.entity.player.EntityPlayerMP;
@@ -43,6 +46,7 @@ public class ClaimItGUI {
         int packets = 0;
         NET.registerMessage(SClaimAddPacket.Handler.class, SClaimAddPacket.class, packets++, Side.CLIENT);
         NET.registerMessage(SClaimRemovePacket.Handler.class, SClaimRemovePacket.class, packets++, Side.CLIENT);
+        NET.registerMessage(CRefreshListPacket.Handler.class, CRefreshListPacket.class, packets++, Side.SERVER);
     }
 
     @EventHandler
@@ -59,10 +63,8 @@ public class ClaimItGUI {
     public static void playerLogin(PlayerLoggedInEvent event) {
         if(event.player instanceof EntityPlayerMP) {
             EntityPlayerMP player = (EntityPlayerMP) event.player;
-            UUID uuid = player.getGameProfile().getId();
-            ImmutableList<ClaimArea> claims = ClaimManager.getManager().getClaimsList();
-            for(ClaimArea claim : claims) {
-                if(claim.isOwner(uuid) || claim.canManage(player)) {
+            for(ClaimArea claim : ClaimManager.getManager().getClaimsList()) {
+                if(shouldSendClaim(player, claim)) {
                     NET.sendTo(new SClaimAddPacket(claim), player);
                 }
             }
@@ -70,14 +72,38 @@ public class ClaimItGUI {
     }
 
     @SubscribeEvent
-    public static void claimCreate(ClaimAddedEvent event) {
+    public static void claimAdd(ClaimAddedEvent event) {
         ClaimArea claim = event.getClaim();
         for(EntityPlayerMP player : FMLCommonHandler.instance().getMinecraftServerInstance().getPlayerList().getPlayers()) {
-            UUID uuid = player.getGameProfile().getId();
-            if(claim.isOwner(uuid) || claim.canManage(player)) {
+            if(shouldSendClaim(player, claim)) {
                 NET.sendTo(new SClaimAddPacket(claim), player);
             }
         }
+    }
+    
+    @SubscribeEvent
+    public static void claimRemove(ClaimRemovedEvent event) {
+        ClaimArea claim = event.getClaim();
+        for(EntityPlayerMP player : FMLCommonHandler.instance().getMinecraftServerInstance().getPlayerList().getPlayers()) {
+            if(shouldSendClaim(player, claim)) {
+                NET.sendTo(new SClaimRemovePacket(claim), player);
+            }
+        }
+    }
+    
+    public static boolean shouldSendClaim(EntityPlayerMP player, ClaimArea claim) {
+        UUID uuid = player.getGameProfile().getId();
+        boolean hasPermsFromGroup = false;
+        for(Group group : GroupManager.getGroupsForClaim(claim)) {
+            if(group.getMembers().containsKey(uuid)) {
+                hasPermsFromGroup = true;
+                break;
+            }
+        }
+        if(claim.isOwner(uuid) || AdminManager.isAdmin(player) || claim.getMembers().containsKey(uuid) || hasPermsFromGroup) {
+            return true;
+        }
+        return false;
     }
 
 }

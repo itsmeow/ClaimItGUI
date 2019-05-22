@@ -4,7 +4,7 @@ import com.google.common.base.Charsets;
 
 import io.netty.buffer.ByteBuf;
 import its_meow.claimit.api.claim.ClaimArea;
-import its_meow.claimit.api.claim.ClaimManager;
+import its_meow.claimitgui.client.ClientClaimManager;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraftforge.fml.common.network.ByteBufUtils;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
@@ -44,7 +44,7 @@ public class SClaimAddPacket implements IMessage {
             if(ctx.side != Side.CLIENT) {
                 return null;
             }
-            ClaimManager.getManager().addClaim(message.claim);
+            ClientClaimManager.addClaim(message.claim);
             return null;
         }
         

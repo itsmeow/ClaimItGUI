@@ -4,7 +4,7 @@ import com.google.common.base.Charsets;
 
 import io.netty.buffer.ByteBuf;
 import its_meow.claimit.api.claim.ClaimArea;
-import its_meow.claimit.api.claim.ClaimManager;
+import its_meow.claimitgui.client.ClientClaimManager;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
@@ -12,24 +12,24 @@ import net.minecraftforge.fml.relauncher.Side;
 
 public class SClaimRemovePacket implements IMessage {
     
-    public String trueName;
+    public String serialName;
     
     public SClaimRemovePacket() {}
     
     public SClaimRemovePacket(ClaimArea claim) {
-        trueName = claim.getTrueViewName();
+        serialName = claim.getSerialName();
     }
     
     @Override
     public void fromBytes(ByteBuf buf) {
         int l = buf.readInt();
-        trueName = String.valueOf(buf.readCharSequence(l, Charsets.UTF_8));
+        serialName = String.valueOf(buf.readCharSequence(l, Charsets.UTF_8));
     }
 
     @Override
     public void toBytes(ByteBuf buf) {
-        buf.writeInt(trueName.length());
-        buf.writeCharSequence(trueName, Charsets.UTF_8);
+        buf.writeInt(serialName.length());
+        buf.writeCharSequence(serialName, Charsets.UTF_8);
     }
     
     public static class Handler implements IMessageHandler<SClaimRemovePacket, IMessage> {
@@ -39,9 +39,9 @@ public class SClaimRemovePacket implements IMessage {
             if(ctx.side != Side.CLIENT) {
                 return null;
             }
-            ClaimArea claim = ClaimManager.getManager().getClaimByTrueName(message.trueName);
+            ClaimArea claim = ClientClaimManager.getClaimBySerialName(message.serialName);
             if(claim != null) {
-                ClaimManager.getManager().deleteClaim(claim);
+                ClientClaimManager.deleteClaim(claim);
             }
             return null;
         }

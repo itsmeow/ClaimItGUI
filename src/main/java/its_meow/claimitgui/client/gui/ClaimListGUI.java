@@ -5,11 +5,19 @@ import java.io.IOException;
 import org.lwjgl.input.Mouse;
 
 import its_meow.claimit.api.claim.ClaimArea;
+import its_meow.claimitgui.ClaimItGUI;
+import its_meow.claimitgui.client.ClientClaimManager;
+import its_meow.claimitgui.client.event.ClientClaimAddedEvent;
+import its_meow.claimitgui.client.event.ClientClaimRemovedEvent;
 import its_meow.claimitgui.client.gui.objects.GuiScrollClaimPanel;
 import its_meow.claimitgui.client.gui.objects.GuiTabSelection;
+import its_meow.claimitgui.network.CRefreshListPacket;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.renderer.GlStateManager;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
 public class ClaimListGUI extends GuiScreen {
     
@@ -28,6 +36,7 @@ public class ClaimListGUI extends GuiScreen {
     public GuiTabSelection tabs;
     
     // Buttons
+    public GuiButton refreshButton;
     public static final int LOCATION_TAB_BUTTON_ID = 0;
     public static final int PERMISSION_TAB_BUTTON_ID = 1;
     
@@ -42,7 +51,8 @@ public class ClaimListGUI extends GuiScreen {
         this.panel.drawScreen(mouseX, mouseY, partialTicks);
         //drawVerticalLine(panelWidth, -1, height, 0xff2d2d2d);
         //drawVerticalLine(panelWidth + 1, -1, height, 0xff2d2d2d);
-        this.drawString(mc.fontRenderer, "Claims List", 10, 10, 0xeeee00);
+        this.drawString(mc.fontRenderer, "Claims", 10, 10, 0xeeee00);
+        refreshButton.drawButton(mc, mouseX, mouseY, partialTicks);
         ClaimArea claim = panel.getSelectedItem();
         if(claim != null) {
             // draw background
@@ -88,6 +98,11 @@ public class ClaimListGUI extends GuiScreen {
                 if(claim.getOwner().equals(Minecraft.getMinecraft().player.getGameProfile().getId())) {
                     name = Minecraft.getMinecraft().player.getName();
                 }
+                int maxL = 15;
+                if(name.length() > maxL) {
+                    name = name.substring(0, maxL);
+                    name += "...";
+                }
                 this.mc.fontRenderer.drawStringWithShadow("Owner: " + name, (panelWidth + xOff + 3) / scaleO, (topBarBottom + 3) / scaleO, 0xffffff);
             }
             GlStateManager.popMatrix();
@@ -101,13 +116,45 @@ public class ClaimListGUI extends GuiScreen {
     public void initGui() {
         panelWidth = (int) (this.width / 3F);
         panel = new GuiScrollClaimPanel(panelWidth, this.height, 25, this.height, BACKGROUND_COLOR, BACKGROUND_COLOR_2);
-        for(int i = 0; i < 50; i++) {
+        refreshButton = new GuiButton(0, 40, 3, 80, 20,"Refresh");
+        this.addButton(refreshButton);
+        /*for(int i = 0; i < 50; i++) {
             panel.addItem(randClaim());
+        }*/
+        ClaimItGUI.NET.sendToServer(new CRefreshListPacket());
+        panel.clearItems();
+        for(ClaimArea claim : ClientClaimManager.getClaimsList()) {
+            panel.addItem(claim);
+        }
+        MinecraftForge.EVENT_BUS.register(this);
+    }
+    
+    @SubscribeEvent
+    public void onClaimAdded(ClientClaimAddedEvent event) {
+        panel.addItem(event.getClaim());
+    }
+    
+    @SubscribeEvent
+    public void onClaimRemoved(ClientClaimRemovedEvent event) {
+        panel.clearItems();
+        for(ClaimArea claim : ClientClaimManager.getClaimsList()) {
+            panel.addItem(claim);
         }
     }
     
-    private static ClaimArea randClaim() {
+    /*private static ClaimArea randClaim() {
         return new ClaimArea((int) (Math.random() * 10), (int) (Math.random() * 100), (int) (Math.random() * 100), (int) (Math.random() * 100), (int) (Math.random() * 100), Minecraft.getMinecraft().player.getGameProfile().getId());
+    }*/
+
+    @Override
+    protected void actionPerformed(GuiButton button) throws IOException {
+        if(button == refreshButton) {
+            ClaimItGUI.NET.sendToServer(new CRefreshListPacket());
+            panel.clearItems();
+            for(ClaimArea claim : ClientClaimManager.getClaimsList()) {
+                panel.addItem(claim);
+            }
+        }
     }
 
     @Override
