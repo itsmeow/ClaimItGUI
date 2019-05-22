@@ -1,7 +1,6 @@
 package its_meow.claimitgui.client.gui;
 
 import java.io.IOException;
-import java.util.UUID;
 
 import org.lwjgl.input.Mouse;
 
