@@ -10,8 +10,10 @@ import its_meow.claimit.api.event.claim.ClaimAddedEvent;
 import its_meow.claimit.api.event.claim.ClaimRemovedEvent;
 import its_meow.claimit.api.group.Group;
 import its_meow.claimit.api.group.GroupManager;
+import its_meow.claimitgui.network.CDeleteClaimPacket;
 import its_meow.claimitgui.network.CRefreshListPacket;
 import its_meow.claimitgui.network.SClaimAddPacket;
+import its_meow.claimitgui.network.SClaimDeletionResultPacket;
 import its_meow.claimitgui.network.SClaimRemovePacket;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraftforge.fml.common.FMLCommonHandler;
@@ -47,6 +49,8 @@ public class ClaimItGUI {
         NET.registerMessage(SClaimAddPacket.Handler.class, SClaimAddPacket.class, packets++, Side.CLIENT);
         NET.registerMessage(SClaimRemovePacket.Handler.class, SClaimRemovePacket.class, packets++, Side.CLIENT);
         NET.registerMessage(CRefreshListPacket.Handler.class, CRefreshListPacket.class, packets++, Side.SERVER);
+        NET.registerMessage(CDeleteClaimPacket.Handler.class, CDeleteClaimPacket.class, packets++, Side.SERVER);
+        NET.registerMessage(SClaimDeletionResultPacket.Handler.class, SClaimDeletionResultPacket.class, packets++, Side.CLIENT);
     }
 
     @EventHandler
@@ -93,14 +97,12 @@ public class ClaimItGUI {
     
     public static boolean shouldSendClaim(EntityPlayerMP player, ClaimArea claim) {
         UUID uuid = player.getGameProfile().getId();
-        boolean hasPermsFromGroup = false;
         for(Group group : GroupManager.getGroupsForClaim(claim)) {
             if(group.getMembers().containsKey(uuid)) {
-                hasPermsFromGroup = true;
-                break;
+                return true;
             }
         }
-        if(claim.isOwner(uuid) || AdminManager.isAdmin(player) || claim.getMembers().containsKey(uuid) || hasPermsFromGroup) {
+        if(claim.isOwner(uuid) || AdminManager.isAdmin(player) || claim.getMembers().containsKey(uuid)) {
             return true;
         }
         return false;

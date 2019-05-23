@@ -7,20 +7,24 @@ import org.lwjgl.input.Mouse;
 import its_meow.claimit.api.claim.ClaimArea;
 import its_meow.claimitgui.ClaimItGUI;
 import its_meow.claimitgui.client.ClientClaimManager;
+import its_meow.claimitgui.client.event.ClaimDeletionResultEvent;
 import its_meow.claimitgui.client.event.ClientClaimAddedEvent;
 import its_meow.claimitgui.client.event.ClientClaimRemovedEvent;
 import its_meow.claimitgui.client.gui.objects.GuiScrollClaimPanel;
 import its_meow.claimitgui.client.gui.objects.GuiTabSelection;
+import its_meow.claimitgui.network.CDeleteClaimPacket;
 import its_meow.claimitgui.network.CRefreshListPacket;
+import its_meow.claimitgui.network.SClaimDeletionResultPacket.DeletionResult;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.renderer.GlStateManager;
+import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
 public class ClaimListGUI extends GuiScreen {
-    
+
     // Colors
     public static final int TITLE_BOX_COLOR = 0x9f727272;
     public static final int MAIN_BOX_COLOR = 0x9f828282;
@@ -28,20 +32,27 @@ public class ClaimListGUI extends GuiScreen {
     public static final int BACKGROUND_COLOR_2 = 0xff121212;
     public static final int MAIN_BACKGROUND_COLOR = 0xff626262;
     public static final int MAIN_BACKGROUND_COLOR_2 = 0xff424242;
-    
+
     // Panel
     public GuiScrollClaimPanel panel;
     public int panelWidth = 10;
-    
+
     public GuiTabSelection tabs;
-    
+
     // Buttons
     public GuiButton refreshButton;
     public static final int LOCATION_TAB_BUTTON_ID = 0;
     public static final int PERMISSION_TAB_BUTTON_ID = 1;
-    
+    public static final int GROUP_TAB_BUTTON_ID = 2;
+
     // General
-    private ClaimArea lastClaim = null;
+    public ClaimArea lastClaim = null;
+    public GuiButton claimDeleteButton;
+
+    // Popup prompt
+    public GuiButton okPromptButton;
+    public boolean hasResult = false;
+    public DeletionResult result;
 
     @Override
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
@@ -69,7 +80,7 @@ public class ClaimListGUI extends GuiScreen {
             drawHorizontalLine(panelWidth + xOff, width - xOff, height - yOff, 0xff141414);
             drawVerticalLine(panelWidth + xOff, yOff, height - yOff, 0xff141414);
             drawVerticalLine(width - xOff, yOff, height - yOff, 0xff141414);
-            
+
             drawRect(panelWidth + xOff + 1, yOff + 1, titleBarX, topBarBottom, 0xff626262);
             // draw foreground
             GlStateManager.pushMatrix();
@@ -84,7 +95,15 @@ public class ClaimListGUI extends GuiScreen {
                 tabs = new GuiTabSelection(mc, titleBarX + 2, width - xOff, yOff + 1);
                 tabs.addButton(LOCATION_TAB_BUTTON_ID, "Location");
                 tabs.addButton(PERMISSION_TAB_BUTTON_ID, "Permissions");
-                tabs.addButton(2, "Groups");
+                tabs.addButton(GROUP_TAB_BUTTON_ID, "Groups");
+            }
+            if(claimDeleteButton == null) {
+                claimDeleteButton = new GuiButton(2, titleBarX + 2, topBarBottom + 2, (width - xOff - titleBarX) / 3, 20, "Delete");
+                this.addButton(claimDeleteButton);
+            } else {
+                claimDeleteButton.setWidth((width - xOff - titleBarX) / 3);
+                claimDeleteButton.x = titleBarX + 2;
+                claimDeleteButton.drawButton(mc, mouseX, mouseY, partialTicks);
             }
             if(claim != lastClaim) {
                 tabs.setDimensions(titleBarX + 2, width - xOff, yOff + 1);
@@ -106,9 +125,30 @@ public class ClaimListGUI extends GuiScreen {
                 this.mc.fontRenderer.drawStringWithShadow("Owner: " + name, (panelWidth + xOff + 3) / scaleO, (topBarBottom + 3) / scaleO, 0xffffff);
             }
             GlStateManager.popMatrix();
+            if(tabs.getSelectedID() == LOCATION_TAB_BUTTON_ID) {
+                this.drawString(mc.fontRenderer, "Corners:", panelWidth + xOff + 2, 4 + (2 * topBarBottom), 0xffffff);
+                BlockPos[] corners = claim.getFourCorners();
+                for(int i = 0; i < corners.length; i++) {
+                    this.drawString(mc.fontRenderer, corners[i].getX() + ", " + corners[i].getZ(), panelWidth + xOff + 2, (2 * topBarBottom) + 15 + (10 * i), 0xffffff);
+                }
+            }
         } else {
             this.drawCenteredString(mc.fontRenderer, "No claim selected.", (width - (width / 3)), 15, 0xe3e3e3);
         }
+        if(hasResult) {
+            this.drawDefaultBackground();
+            int boxWidth = 200;
+            int boxHeight = 50;
+            int x = (this.width / 2) - (boxWidth / 2);
+            int y = (this.height / 2) - (boxHeight / 2);
+            drawRect(x, y, x + boxWidth, y + boxHeight, MAIN_BACKGROUND_COLOR_2);
+            drawRect(x + 1, y + 1, x + boxWidth - 1, y + boxHeight - 1, MAIN_BACKGROUND_COLOR);
+            this.drawCenteredString(mc.fontRenderer, this.result.toString(), this.width / 2, (this.height / 2) - (boxHeight / 3), 0xffffff);
+            this.okPromptButton.x = (this.width / 2) - (this.okPromptButton.width / 2);
+            this.okPromptButton.y = (this.height / 2);
+            this.okPromptButton.drawButton(mc, mouseX, mouseY, partialTicks);
+        }
+
         lastClaim = claim;
     }
 
@@ -118,6 +158,8 @@ public class ClaimListGUI extends GuiScreen {
         panel = new GuiScrollClaimPanel(panelWidth, this.height, 25, this.height, BACKGROUND_COLOR, BACKGROUND_COLOR_2);
         refreshButton = new GuiButton(0, 40, 3, 80, 20,"Refresh");
         this.addButton(refreshButton);
+        okPromptButton = new GuiButton(1, this.width / 2 - 100, (this.height / 2) + 20, 100, 20, "OK");
+        this.addButton(okPromptButton);
         /*for(int i = 0; i < 50; i++) {
             panel.addItem(randClaim());
         }*/
@@ -128,12 +170,12 @@ public class ClaimListGUI extends GuiScreen {
         }
         MinecraftForge.EVENT_BUS.register(this);
     }
-    
+
     @SubscribeEvent
     public void onClaimAdded(ClientClaimAddedEvent event) {
         panel.addItem(event.getClaim());
     }
-    
+
     @SubscribeEvent
     public void onClaimRemoved(ClientClaimRemovedEvent event) {
         panel.clearItems();
@@ -141,18 +183,34 @@ public class ClaimListGUI extends GuiScreen {
             panel.addItem(claim);
         }
     }
-    
+
+    @SubscribeEvent
+    public void onDeletionResult(ClaimDeletionResultEvent event) {
+        this.result = event.result;
+        this.hasResult = true;
+        this.onClaimRemoved(new ClientClaimRemovedEvent(null));
+    }
+
     /*private static ClaimArea randClaim() {
         return new ClaimArea((int) (Math.random() * 10), (int) (Math.random() * 100), (int) (Math.random() * 100), (int) (Math.random() * 100), (int) (Math.random() * 100), Minecraft.getMinecraft().player.getGameProfile().getId());
     }*/
 
     @Override
     protected void actionPerformed(GuiButton button) throws IOException {
-        if(button == refreshButton) {
-            ClaimItGUI.NET.sendToServer(new CRefreshListPacket());
-            panel.clearItems();
-            for(ClaimArea claim : ClientClaimManager.getClaimsList()) {
-                panel.addItem(claim);
+        if(!hasResult) {
+            if(button == refreshButton) {
+                ClaimItGUI.NET.sendToServer(new CRefreshListPacket());
+                panel.clearItems();
+                for(ClaimArea claim : ClientClaimManager.getClaimsList()) {
+                    panel.addItem(claim);
+                }
+            }
+            if(panel != null && panel.getSelectedItem() != null && button == claimDeleteButton) {
+                ClaimItGUI.NET.sendToServer(new CDeleteClaimPacket(panel.getSelectedItem()));
+            }
+        } else {
+            if(button == okPromptButton) {
+                this.hasResult = false;
             }
         }
     }

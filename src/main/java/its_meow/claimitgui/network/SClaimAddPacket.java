@@ -12,14 +12,12 @@ import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 import net.minecraftforge.fml.relauncher.Side;
 
-public class SClaimAddPacket implements IMessage {
-
-    public ClaimArea claim;
+public class SClaimAddPacket extends ClaimPacket {
     
     public SClaimAddPacket() {}
-    
+
     public SClaimAddPacket(ClaimArea claim) {
-        this.claim = claim;
+        super(claim);
     }
 
     @Override
@@ -36,7 +34,7 @@ public class SClaimAddPacket implements IMessage {
         buf.writeCharSequence(claim.getSerialName(), Charsets.UTF_8);
         ByteBufUtils.writeTag(buf, claim.serialize());
     }
-    
+
     public static class Handler implements IMessageHandler<SClaimAddPacket, IMessage> {
 
         @Override
@@ -47,7 +45,7 @@ public class SClaimAddPacket implements IMessage {
             ClientClaimManager.addClaim(message.claim);
             return null;
         }
-        
+
     }
 
 }
