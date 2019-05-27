@@ -126,11 +126,12 @@ public class ClaimListGUI extends GuiScreen {
             }
             GlStateManager.popMatrix();
             if(tabs.getSelectedID() == LOCATION_TAB_BUTTON_ID) {
-                this.drawString(mc.fontRenderer, "Corners:", panelWidth + xOff + 2, 4 + (2 * topBarBottom), 0xffffff);
+                this.drawString(mc.fontRenderer, "Corners", panelWidth + xOff + 2, 4 + (2 * topBarBottom), 0xffffff);
                 BlockPos[] corners = claim.getFourCorners();
                 for(int i = 0; i < corners.length; i++) {
                     this.drawString(mc.fontRenderer, corners[i].getX() + ", " + corners[i].getZ(), panelWidth + xOff + 2, (2 * topBarBottom) + 15 + (10 * i), 0xffffff);
                 }
+                this.drawString(mc.fontRenderer, "Dimension: " + claim.getDimensionID(), width - xOff - 2 - mc.fontRenderer.getStringWidth("Dimension:  " + claim.getDimensionID()), (2 * topBarBottom) + 4, 0xffffff);
             }
         } else {
             this.drawCenteredString(mc.fontRenderer, "No claim selected.", (width - (width / 3)), 15, 0xe3e3e3);
