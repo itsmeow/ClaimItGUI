@@ -52,6 +52,7 @@ public class ClaimListGUI extends GuiScreen {
     // Popup prompt
     public GuiButton okPromptButton;
     public boolean hasResult = false;
+    public boolean lastHasResult = false;
     public DeletionResult result;
 
     @Override
@@ -70,9 +71,9 @@ public class ClaimListGUI extends GuiScreen {
             int xOff = 5;
             int yOff = 3;
             String title = "Claim: " + claim.getDisplayedViewName();
-            int titleWidth = mc.fontRenderer.getStringWidth(title);
+            int titleWidth = (int) (mc.fontRenderer.getStringWidth(title) * 1.5F);
             int topBarBottom = (int) (yOff + 8F + (mc.fontRenderer.FONT_HEIGHT * 1.5F));
-            int titleBarX = (int) (panelWidth + xOff + 8F + titleWidth * 1.5F);
+            int titleBarX = (int) (panelWidth + xOff + 8F + titleWidth);
             drawRect(panelWidth + xOff, yOff, width - xOff, height - yOff, TITLE_BOX_COLOR);
             drawRect(panelWidth + xOff, yOff, width - xOff, 2 * topBarBottom, MAIN_BOX_COLOR);
             drawHorizontalLine(panelWidth + xOff, width - xOff, yOff, 0xff141414);
@@ -109,17 +110,21 @@ public class ClaimListGUI extends GuiScreen {
                 tabs.setDimensions(titleBarX + 2, width - xOff, yOff + 1);
             }
             tabs.drawScreen(mouseX, mouseY, partialTicks);
+            String name = claim.getOwner().toString();
+            String oName = name;
             float scaleO = 0.8F;
             GlStateManager.pushMatrix();
             {
                 GlStateManager.scale(scaleO, scaleO, scaleO);
-                String name = claim.getOwner().toString();
                 if(claim.getOwner().equals(Minecraft.getMinecraft().player.getGameProfile().getId())) {
                     name = Minecraft.getMinecraft().player.getName();
                 }
-                int maxL = 15;
-                if(name.length() > maxL) {
-                    name = name.substring(0, maxL);
+                oName = name;
+                while((mc.fontRenderer.getStringWidth("Owner: " + name)) * scaleO >= titleWidth) {
+                    name = name.substring(0, name.length() - 1);
+                }
+                if(name.length() != oName.length()) {
+                    //name = name.substring(0, name.length() - 1);
                     name += "...";
                 }
                 this.mc.fontRenderer.drawStringWithShadow("Owner: " + name, (panelWidth + xOff + 3) / scaleO, (topBarBottom + 3) / scaleO, 0xffffff);
@@ -132,6 +137,26 @@ public class ClaimListGUI extends GuiScreen {
                     this.drawString(mc.fontRenderer, corners[i].getX() + ", " + corners[i].getZ(), panelWidth + xOff + 2, (2 * topBarBottom) + 15 + (10 * i), 0xffffff);
                 }
                 this.drawString(mc.fontRenderer, "Dimension: " + claim.getDimensionID(), width - xOff - 2 - mc.fontRenderer.getStringWidth("Dimension:  " + claim.getDimensionID()), (2 * topBarBottom) + 4, 0xffffff);
+            } else if(tabs.getSelectedID() == PERMISSION_TAB_BUTTON_ID) {
+                
+            }
+            
+            
+            if(mouseY >= (topBarBottom + 3) * scaleO && mouseY <= (topBarBottom + 3 + 20) * scaleO && mouseX >= (panelWidth + xOff + 3) && mouseX <= (panelWidth + xOff + 3 + titleWidth)) {
+                int width = mc.fontRenderer.getStringWidth("Owner: " + oName + "  ");
+                int left = mouseX - width;
+                int right = mouseX;
+                if(mouseX - width < 0) {
+                    left = mouseX;
+                    right = mouseX + width;
+                }
+                int height = 15;
+                drawRect(left, mouseY, right, mouseY + height, MAIN_BACKGROUND_COLOR_2);
+                drawVerticalLine(left, mouseY, mouseY + height, MAIN_BACKGROUND_COLOR);
+                drawVerticalLine(right, mouseY, mouseY + height, MAIN_BACKGROUND_COLOR);
+                drawHorizontalLine(left, right, mouseY, MAIN_BACKGROUND_COLOR);
+                drawHorizontalLine(left, right, mouseY + height, MAIN_BACKGROUND_COLOR);
+                this.drawString(mc.fontRenderer, "Owner: " + oName, left + 5, mouseY + 5, 0xffffff);
             }
         } else {
             this.drawCenteredString(mc.fontRenderer, "No claim selected.", (width - (width / 3)), 15, 0xe3e3e3);
@@ -149,7 +174,11 @@ public class ClaimListGUI extends GuiScreen {
             this.okPromptButton.y = (this.height / 2);
             this.okPromptButton.drawButton(mc, mouseX, mouseY, partialTicks);
         }
-
+        if(lastHasResult ^ hasResult) {
+            ClaimItGUI.NET.sendToServer(new CRefreshListPacket());
+            this.resetClaimList();
+        }
+        lastHasResult = hasResult;
         lastClaim = claim;
     }
 
@@ -165,10 +194,7 @@ public class ClaimListGUI extends GuiScreen {
             panel.addItem(randClaim());
         }*/
         ClaimItGUI.NET.sendToServer(new CRefreshListPacket());
-        panel.clearItems();
-        for(ClaimArea claim : ClientClaimManager.getClaimsList()) {
-            panel.addItem(claim);
-        }
+        resetClaimList();
         MinecraftForge.EVENT_BUS.register(this);
     }
 
@@ -179,6 +205,10 @@ public class ClaimListGUI extends GuiScreen {
 
     @SubscribeEvent
     public void onClaimRemoved(ClientClaimRemovedEvent event) {
+        resetClaimList();
+    }
+    
+    public void resetClaimList() {
         panel.clearItems();
         for(ClaimArea claim : ClientClaimManager.getClaimsList()) {
             panel.addItem(claim);
@@ -189,7 +219,9 @@ public class ClaimListGUI extends GuiScreen {
     public void onDeletionResult(ClaimDeletionResultEvent event) {
         this.result = event.result;
         this.hasResult = true;
-        this.onClaimRemoved(new ClientClaimRemovedEvent(null));
+        if(event.claim != null && (event.result == DeletionResult.DELETED || event.result == DeletionResult.NO_EXIST)) {
+            MinecraftForge.EVENT_BUS.post(new ClientClaimRemovedEvent(event.claim));
+        }
     }
 
     /*private static ClaimArea randClaim() {

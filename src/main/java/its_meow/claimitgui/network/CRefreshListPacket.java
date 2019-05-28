@@ -58,6 +58,7 @@ public class CRefreshListPacket implements IMessage {
                     ClaimItGUI.NET.sendTo(new SClaimRemovePacket(claim), player);
                 }
             }
+            
             return null;
         }
 

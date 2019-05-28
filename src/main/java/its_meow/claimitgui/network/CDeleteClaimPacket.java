@@ -11,6 +11,8 @@ import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 
 public class CDeleteClaimPacket extends ClaimPacket {
+    
+    public String serialName;
 
     public CDeleteClaimPacket() {}
 
@@ -22,13 +24,20 @@ public class CDeleteClaimPacket extends ClaimPacket {
     public void fromBytes(ByteBuf buf) {
         int l = buf.readInt();
         String tName = String.valueOf(buf.readCharSequence(l, Charsets.UTF_8));
-        claim = ClaimManager.getManager().getClaimByTrueName(tName);
+        claim = null;
+        for(ClaimArea claim2 : ClaimManager.getManager().getClaimsList()) {
+            if(claim2.getSerialName().equals(tName)) {
+                claim = claim2;
+                break;
+            }
+        }
+        serialName = tName;
     }
 
     @Override
     public void toBytes(ByteBuf buf) {
-        buf.writeInt(claim.getTrueViewName().length());
-        buf.writeCharSequence(claim.getTrueViewName(), Charsets.UTF_8);
+        buf.writeInt(claim.getSerialName().length());
+        buf.writeCharSequence(claim.getSerialName(), Charsets.UTF_8);
     }
 
     public static class Handler implements IMessageHandler<CDeleteClaimPacket, SClaimDeletionResultPacket> {
@@ -37,15 +46,15 @@ public class CDeleteClaimPacket extends ClaimPacket {
         public SClaimDeletionResultPacket onMessage(CDeleteClaimPacket message, MessageContext ctx) {
             try {
                 if(message.claim == null) {
-                    return new SClaimDeletionResultPacket(DeletionResult.NO_EXIST);
+                    return new SClaimDeletionResultPacket(message.serialName, DeletionResult.NO_EXIST);
                 } else if(CommandUtils.isAdminWithNodeOrOwner(ctx.getServerHandler().player, message.claim, "claimit.command.claimit.claim.delete.others")) {
                     ClaimManager.getManager().deleteClaim(message.claim);
-                    return new SClaimDeletionResultPacket(DeletionResult.DELETED);
+                    return new SClaimDeletionResultPacket(message.serialName, DeletionResult.DELETED);
                 } else {
-                    return new SClaimDeletionResultPacket(DeletionResult.NO_PERM);
+                    return new SClaimDeletionResultPacket(message.serialName, DeletionResult.NO_PERM);
                 }
             } catch(Exception e) {
-                return new SClaimDeletionResultPacket(DeletionResult.PACKET_ERROR);
+                return new SClaimDeletionResultPacket(message.serialName, DeletionResult.PACKET_ERROR);
             }
         }
 

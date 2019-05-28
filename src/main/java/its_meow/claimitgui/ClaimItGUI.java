@@ -84,17 +84,15 @@ public class ClaimItGUI {
             }
         }
     }
-    
+
     @SubscribeEvent
     public static void claimRemove(ClaimRemovedEvent event) {
         ClaimArea claim = event.getClaim();
         for(EntityPlayerMP player : FMLCommonHandler.instance().getMinecraftServerInstance().getPlayerList().getPlayers()) {
-            if(shouldSendClaim(player, claim)) {
-                NET.sendTo(new SClaimRemovePacket(claim), player);
-            }
+            NET.sendTo(new SClaimRemovePacket(claim), player);
         }
     }
-    
+
     public static boolean shouldSendClaim(EntityPlayerMP player, ClaimArea claim) {
         UUID uuid = player.getGameProfile().getId();
         for(Group group : GroupManager.getGroupsForClaim(claim)) {
