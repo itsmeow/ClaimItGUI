@@ -1,7 +1,5 @@
 package its_meow.claimitgui.network;
 
-import com.google.common.base.Charsets;
-
 import io.netty.buffer.ByteBuf;
 import its_meow.claimit.api.claim.ClaimArea;
 import its_meow.claimitgui.client.ClientClaimManager;
@@ -22,16 +20,14 @@ public class SClaimAddPacket extends ClaimPacket {
 
     @Override
     public void fromBytes(ByteBuf buf) {
-        int l = buf.readInt();
-        String serialName = String.valueOf(buf.readCharSequence(l, Charsets.UTF_8));
+        int hash = buf.readInt();
         NBTTagCompound tag = ByteBufUtils.readTag(buf);
-        claim = ClaimArea.deserialize(tag, serialName);
+        claim = ClaimArea.deserialize(tag, String.valueOf(hash));
     }
 
     @Override
     public void toBytes(ByteBuf buf) {
-        buf.writeInt(claim.getSerialName().length());
-        buf.writeCharSequence(claim.getSerialName(), Charsets.UTF_8);
+        buf.writeInt(claim.hashCode());
         ByteBufUtils.writeTag(buf, claim.serialize());
     }
 

@@ -117,12 +117,9 @@ public class ClientClaimManager {
     }
     
     @Nullable
-    /** Gets the claim by the viewable name and the owner
-     * @param name - The true name of the claim (with UUID prefix)
-     * @returns The claim with this name and owner or null if no claim is found **/
-    public static ClaimArea getClaimBySerialName(String name) {
+    public static ClaimArea getClaimByHash(int hash) {
         for(ClaimArea claim : claims) {
-            if(claim.getSerialName().equals(name)) {
+            if(claim.hashCode() == hash) {
                 return claim;
             }
         }
