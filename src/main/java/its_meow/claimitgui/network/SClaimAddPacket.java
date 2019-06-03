@@ -5,8 +5,6 @@ import its_meow.claimit.api.claim.ClaimArea;
 import its_meow.claimitgui.client.ClientClaimManager;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraftforge.fml.common.network.ByteBufUtils;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 import net.minecraftforge.fml.relauncher.Side;
 
@@ -31,15 +29,14 @@ public class SClaimAddPacket extends ClaimPacket {
         ByteBufUtils.writeTag(buf, claim.serialize());
     }
 
-    public static class Handler implements IMessageHandler<SClaimAddPacket, IMessage> {
+    public static class Handler implements INullResponseHandler<SClaimAddPacket> {
 
         @Override
-        public IMessage onMessage(SClaimAddPacket message, MessageContext ctx) {
+        public void req(SClaimAddPacket message, MessageContext ctx) {
             if(ctx.side != Side.CLIENT) {
-                return null;
+                return;
             }
             ClientClaimManager.addClaim(message.claim);
-            return null;
         }
 
     }

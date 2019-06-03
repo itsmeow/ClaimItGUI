@@ -5,7 +5,6 @@ import its_meow.claimitgui.client.ClientClaimManager;
 import its_meow.claimitgui.client.event.ClaimDeletionResultEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 
 public class SClaimDeletionResultPacket implements IMessage {
@@ -44,12 +43,11 @@ public class SClaimDeletionResultPacket implements IMessage {
         DELETED;
     }
 
-    public static class Handler implements IMessageHandler<SClaimDeletionResultPacket, IMessage> {
+    public static class Handler implements INullResponseHandler<SClaimDeletionResultPacket> {
 
         @Override
-        public IMessage onMessage(SClaimDeletionResultPacket message, MessageContext ctx) {
+        public void req(SClaimDeletionResultPacket message, MessageContext ctx) {
             MinecraftForge.EVENT_BUS.post(new ClaimDeletionResultEvent(ClientClaimManager.getClaimByHash(message.hash), message.result));
-            return null;
         }
 
     }

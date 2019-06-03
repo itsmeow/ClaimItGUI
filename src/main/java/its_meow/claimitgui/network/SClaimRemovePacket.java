@@ -4,7 +4,6 @@ import io.netty.buffer.ByteBuf;
 import its_meow.claimit.api.claim.ClaimArea;
 import its_meow.claimitgui.client.ClientClaimManager;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 import net.minecraftforge.fml.relauncher.Side;
 
@@ -28,18 +27,17 @@ public class SClaimRemovePacket implements IMessage {
         buf.writeInt(hash);
     }
     
-    public static class Handler implements IMessageHandler<SClaimRemovePacket, IMessage> {
+    public static class Handler implements INullResponseHandler<SClaimRemovePacket> {
 
         @Override
-        public IMessage onMessage(SClaimRemovePacket message, MessageContext ctx) {
+        public void req(SClaimRemovePacket message, MessageContext ctx) {
             if(ctx.side != Side.CLIENT) {
-                return null;
+                return;
             }
             ClaimArea claim = ClientClaimManager.getClaimByHash(message.hash);
             if(claim != null) {
                 ClientClaimManager.deleteClaim(claim);
             }
-            return null;
         }
         
     }

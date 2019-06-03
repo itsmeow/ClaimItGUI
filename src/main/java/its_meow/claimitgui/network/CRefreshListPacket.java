@@ -53,9 +53,9 @@ public class CRefreshListPacket implements IMessage {
             EntityPlayerMP player = (EntityPlayerMP) ctx.getServerHandler().player;
             for(ClaimArea claim : ClaimManager.getManager().getClaimsList()) {
                 if(!names.contains(claim.getTrueViewName()) && ClaimItGUI.shouldSendClaim(player, claim)) {
-                    ClaimItGUI.NET.sendTo(new SClaimAddPacket(claim), player);
+                    return new SClaimAddPacket(claim);
                 } else if(names.contains(claim.getTrueViewName()) && !ClaimItGUI.shouldSendClaim(player, claim)) {
-                    ClaimItGUI.NET.sendTo(new SClaimRemovePacket(claim), player);
+                    return new SClaimRemovePacket(claim);
                 }
             }
             

@@ -1,6 +1,7 @@
 package its_meow.claimitgui.client.gui;
 
 import java.io.IOException;
+import java.util.UUID;
 
 import org.lwjgl.input.Mouse;
 
@@ -15,9 +16,9 @@ import its_meow.claimitgui.client.gui.objects.GuiTabSelection;
 import its_meow.claimitgui.network.CDeleteClaimPacket;
 import its_meow.claimitgui.network.CRefreshListPacket;
 import its_meow.claimitgui.network.SClaimDeletionResultPacket.DeletionResult;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
+import net.minecraft.client.network.NetworkPlayerInfo;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.common.MinecraftForge;
@@ -57,12 +58,8 @@ public class ClaimListGUI extends GuiScreen {
 
     @Override
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
-        //this.drawBackground(0);
         this.drawDefaultBackground();
-        //drawGradientRect(0, 0, width, height, MAIN_BACKGROUND_COLOR, MAIN_BACKGROUND_COLOR_2);
         this.panel.drawScreen(mouseX, mouseY, partialTicks);
-        //drawVerticalLine(panelWidth, -1, height, 0xff2d2d2d);
-        //drawVerticalLine(panelWidth + 1, -1, height, 0xff2d2d2d);
         this.drawString(mc.fontRenderer, "Claims", 10, 10, 0xeeee00);
         refreshButton.drawButton(mc, mouseX, mouseY, partialTicks);
         ClaimArea claim = panel.getSelectedItem();
@@ -116,15 +113,12 @@ public class ClaimListGUI extends GuiScreen {
             GlStateManager.pushMatrix();
             {
                 GlStateManager.scale(scaleO, scaleO, scaleO);
-                if(claim.getOwner().equals(Minecraft.getMinecraft().player.getGameProfile().getId())) {
-                    name = Minecraft.getMinecraft().player.getName();
-                }
+                name = this.getPlayerName(claim.getOwner());
                 oName = name;
                 while((mc.fontRenderer.getStringWidth("Owner: " + name)) * scaleO >= titleWidth) {
                     name = name.substring(0, name.length() - 1);
                 }
                 if(name.length() != oName.length()) {
-                    //name = name.substring(0, name.length() - 1);
                     name += "...";
                 }
                 this.mc.fontRenderer.drawStringWithShadow("Owner: " + name, (panelWidth + xOff + 3) / scaleO, (topBarBottom + 3) / scaleO, 0xffffff);
@@ -138,7 +132,12 @@ public class ClaimListGUI extends GuiScreen {
                 }
                 this.drawString(mc.fontRenderer, "Dimension: " + claim.getDimensionID(), width - xOff - 2 - mc.fontRenderer.getStringWidth("Dimension:  " + claim.getDimensionID()), (2 * topBarBottom) + 4, 0xffffff);
             } else if(tabs.getSelectedID() == PERMISSION_TAB_BUTTON_ID) {
-                
+                this.drawString(mc.fontRenderer, "Permission", panelWidth + xOff + 2, 4 + (2 * topBarBottom), 0xffffff);
+                int i = 0;
+                for(UUID uuid : claim.getMembers().keySet()) {
+                    this.drawString(mc.fontRenderer, uuid.toString(), panelWidth + xOff + 2, (2 * topBarBottom) + 15 + (10 * i), 0xffffff);
+                    i++;
+                }
             }
             
             
@@ -259,6 +258,11 @@ public class ClaimListGUI extends GuiScreen {
             int j = this.height - Mouse.getEventY() * this.height / this.mc.displayHeight - 1;
             tabs.handleMouseInput(i, j);
         }
+    }
+    
+    public String getPlayerName(UUID uuid) {
+        NetworkPlayerInfo info = this.mc.player.connection.getPlayerInfo(uuid);
+        return info.getDisplayName() != null ? info.getDisplayName().getFormattedText() : info.getGameProfile().getName();
     }
 
 }
