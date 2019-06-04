@@ -55,6 +55,10 @@ public class ClaimListGUI extends GuiScreen {
     public boolean lastHasResult = false;
     public DeletionResult result;
 
+    // Scrol list
+    public int permScrollIndex = 0;
+    public int permScrollMax = 0;
+
     @Override
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
         // Draw background and panel
@@ -173,15 +177,20 @@ public class ClaimListGUI extends GuiScreen {
 
             // Draw permissions if selected
             if(tabs.getSelectedID() == PERMISSION_TAB_BUTTON_ID) {
+                permScrollMax = claim.getMembers().keySet().size();
                 int i = 0;
+                int k = 0;
                 for(UUID uuid : claim.getMembers().keySet()) {
-                    this.drawString(mc.fontRenderer, uuid.toString(), mainPanelRight + xOff + 2, (2 * topBarBottom) + 15 + (10 * i), 0xffffff);
+                    if(i >= permScrollIndex && i <= permScrollMax) {
+                        this.drawString(mc.fontRenderer, uuid.toString(), mainPanelRight + xOff + 2, topBarBottom + 15 + (10 * k), 0xffffff);
+                        k++;
+                    }
                     i++;
                 }
                 if(i > 0) {
-                    this.drawString(mc.fontRenderer, "Permission", mainPanelRight + xOff + 2, 4 + (2 * topBarBottom), 0xffffff);
+                    this.drawString(mc.fontRenderer, "Permissions:", mainPanelRight + xOff + 2, 4 + topBarBottom, 0xffffff);
                 } else {
-                    this.drawString(mc.fontRenderer, "No Permissions Added", mainPanelRight + xOff + 2, 4 + (2 * topBarBottom), 0xffffff);
+                    this.drawString(mc.fontRenderer, "No Permissions Added.", mainPanelRight + xOff + 2, 4 + topBarBottom, 0xffffff);
                 }
             }
 
@@ -310,10 +319,36 @@ public class ClaimListGUI extends GuiScreen {
             int j = this.height - Mouse.getEventY() * this.height / this.mc.displayHeight - 1;
             tabs.handleMouseInput(i, j);
         }
+        if(!hasResult && tabs != null && tabs.getSelectedID() == PERMISSION_TAB_BUTTON_ID) {
+            int scrollDirection = Mouse.getEventDWheel();
+
+            if (scrollDirection != 0)
+            {
+                if (scrollDirection > 0)
+                {
+                    scrollDirection = -1;
+                }
+                else if (scrollDirection < 0)
+                {
+                    scrollDirection = 1;
+                }
+
+                this.permScrollIndex += scrollDirection;
+                if(permScrollIndex < 0) {
+                    permScrollIndex = 0;
+                }
+                if(permScrollIndex > permScrollMax) {
+                    permScrollIndex = permScrollMax;
+                }
+            }
+        }
     }
 
     public String getPlayerName(UUID uuid) {
         NetworkPlayerInfo info = this.mc.player.connection.getPlayerInfo(uuid);
+        if(info == null) {
+            return uuid.toString();
+        }
         return info.getDisplayName() != null ? info.getDisplayName().getFormattedText() : info.getGameProfile().getName();
     }
 
